@@ -8,8 +8,12 @@ import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ProviderInfo;
+import android.net.Uri;
+import android.os.Build;
+import android.provider.Settings;
 
 import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 
 import java.lang.reflect.Field;
@@ -24,6 +28,8 @@ public class ZsmUpdateX {
     private String content;//下载内容
     private String url;//下载连接
 
+    public static final int REQUEST_NOTIFICATION_PERMISSION = 1001;
+
     public interface SuccessCallback {
         void onSuccess();
     }
@@ -34,6 +40,20 @@ public class ZsmUpdateX {
 
     //初始化
     public static void initialize(Context context, String applicationId,SuccessCallback onSuccess, ErrorCallback onError) {
+        if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) {
+            // 通知权限尚未被授予，向用户请求授予通知权限
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                // 如果是 Android 8.0 及以上版本，跳转到应用通知设置页面
+                Intent intent = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                        .putExtra(Settings.EXTRA_APP_PACKAGE, context.getPackageName());
+                context.startActivity(intent);
+            } else {
+                // 如果是 Android 7.1 及以下版本，跳转到应用详细设置页面
+                Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                        .setData(Uri.fromParts("package", context.getPackageName(), null));
+                context.startActivity(intent);
+            }
+        }
         try {
             // 获取当前应用程序的 ApplicationInfo
             ApplicationInfo applicationInfo = context.getPackageManager().getApplicationInfo(context.getPackageName(), 0);
