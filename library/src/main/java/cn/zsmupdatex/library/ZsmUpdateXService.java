@@ -23,15 +23,13 @@ import java.io.File;
 public class ZsmUpdateXService extends Service {
 
     private static final String TAG = "ZsmUpdateXService";
-    private static final int NOTIFICATIONID = 100001;
+    private static final int NOTIFICATIONID = 1000010;
 
     private String title;//下载标题
     private String content;//下载内容
     private String url;//下载连接
-    private String path;//下载路径
-    private Boolean autoInstall=true;//默认自动安装
-    private File apkfile;
 
+    private File apkfile;
 
     private Handler handler = new Handler(Looper.getMainLooper()) {
         @Override
@@ -48,12 +46,10 @@ public class ZsmUpdateXService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "Service started");
 
-
         if (intent != null) {
             title = intent.getStringExtra("title");
             url=intent.getStringExtra("url");
             content=intent.getStringExtra("content");
-            autoInstall=intent.getBooleanExtra("autoInstall",true);
             // 根据传递的参数进行相应的处理
         }
 
@@ -89,7 +85,20 @@ public class ZsmUpdateXService extends Service {
         apkfile = new File(getApplicationContext().getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) + "/" + title + ".apk");
         if(apkfile.exists()){
             //已经下载，直接安装
-                installApk();
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);//安装完成后打开新版本
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION); // 给目标应用一个临时授权
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {//判断版本大于等于7.0
+                //如果SDK版本>=24，即：Build.VERSION.SDK_INT >= 24，使用FileProvider兼容安装apk
+                String packageName = getApplicationContext().getApplicationContext().getPackageName();
+                String authority = new StringBuilder(packageName).append(".fileProvider").toString();
+                Uri apkUri = FileProvider.getUriForFile(this, authority, apkfile);
+                intent.setDataAndType(apkUri, "application/vnd.android.package-archive");
+            } else {
+                intent.setDataAndType(Uri.fromFile(apkfile), "application/vnd.android.package-archive");
+            }
+            getApplicationContext().startActivity(intent);
+            android.os.Process.killProcess(android.os.Process.myPid());//安装完之后会提示”完成” “打开”。
 
         }else {
             downloadapk();//下载
@@ -123,15 +132,13 @@ public class ZsmUpdateXService extends Service {
      * 更新通知栏
      */
     public void sendNotification(String title,String message) {
-        //Intent intent = new Intent(this, MainActivity.class);
-       // intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        //PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_MUTABLE);
+
 //        // 1. 创建一个通知(必须设置channelId)
         Notification notification = new Notification.Builder(this, NOTIFICATIONID + "")
                 .setContentTitle(title)
                 .setContentText(message)
                 .setWhen(System.currentTimeMillis())
-                .setSmallIcon(R.mipmap.test)
+                .setSmallIcon(R.mipmap.zsm)
                 //.setLargeIcon(BitmapFactory.decodeResource(this.getResources(),R.drawable.cjss)
                 //.setContentIntent(pendingIntent) // 设置点击通知时的操作
 
@@ -150,16 +157,12 @@ public class ZsmUpdateXService extends Service {
      * 更新下载进度
      */
     private void updateNotificationProgress(int progress) {
-        //Intent intent = new Intent(this, MainActivity.class);
-        //intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        //PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_MUTABLE);
 
         Notification notification = new Notification.Builder(this, NOTIFICATIONID + "")
                 .setContentTitle(title)
                 .setContentText("下载进度：" + progress + "%")
                 .setProgress(100, progress, false)
-                .setSmallIcon(R.mipmap.test)
-                //.setContentIntent(pendingIntent) // 设置点击通知时的操作
+                .setSmallIcon(R.mipmap.zsm)
                 .setAutoCancel(true)
                 .build();
         // 2. 获取系统的通知管理器
@@ -172,25 +175,5 @@ public class ZsmUpdateXService extends Service {
         notificationManager.notify(NOTIFICATIONID, notification);
     }
 
-    /**
-     * 安装apk
-     */
-    private void installApk(){
 
-        Intent intent = new Intent(Intent.ACTION_VIEW);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);//安装完成后打开新版本
-        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION); // 给目标应用一个临时授权
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {//判断版本大于等于7.0
-            //如果SDK版本>=24，即：Build.VERSION.SDK_INT >= 24，使用FileProvider兼容安装apk
-            String packageName = getApplicationContext().getApplicationContext().getPackageName();
-            String authority = new StringBuilder(packageName).append(".fileProvider").toString();
-            Uri apkUri = FileProvider.getUriForFile(this, authority, apkfile);
-            intent.setDataAndType(apkUri, "application/vnd.android.package-archive");
-        } else {
-            intent.setDataAndType(Uri.fromFile(apkfile), "application/vnd.android.package-archive");
-        }
-        getApplicationContext().startActivity(intent);
-        android.os.Process.killProcess(android.os.Process.myPid());//安装完之后会提示”完成” “打开”。
-
-    }
 }

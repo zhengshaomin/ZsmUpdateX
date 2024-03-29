@@ -38,7 +38,7 @@ dependencies {
 }
 
 group='com.github.zhengshaomin'
-version ='1.0.0'
+version ='1.0.1'
 afterEvaluate {
     publishing {
         publications {
@@ -46,7 +46,7 @@ afterEvaluate {
                 from components.release
                 groupId 'cn.zsmupdatex.library'
                 artifactId 'ZsmUpdateX'
-                version '1.0.0'
+                version '1.0.1'
                 // from components.release
             }
         }
