@@ -1,0 +1,2 @@
+# ZsmUpdateX
+about auto update
