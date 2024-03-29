@@ -61,9 +61,9 @@ __Step 4.__ 传入必要参数
 
 ```
 ZsmUpdateX zsmUpdateX=new ZsmUpdateX();
-                zsmUpdateX.setTitle("")
-                        .setContent("")
-                        .setUrl("")
-                        .start(this);
+	zsmUpdateX.setTitle("")
+		.setContent("")
+		.setUrl("")
+		.start(this);
 ```
 
